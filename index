@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Casa — Tasques i Punts</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f7f4;--surface:#fff;--surface2:#f1f0ec;
+  --text:#1a1a18;--text2:#6b6a66;--text3:#9b9a96;
+  --border:#e2e1dc;--border2:#c8c7c2;
+  --accent:#2563eb;--accent-bg:#eff6ff;--accent-text:#1d4ed8;
+  --success:#16a34a;--success-bg:#f0fdf4;--success-text:#15803d;
+  --warning:#d97706;--warning-bg:#fffbeb;--warning-text:#b45309;
+  --danger:#dc2626;--danger-bg:#fef2f2;--danger-text:#b91c1c;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;
+  --radius:10px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+button{cursor:pointer;font-family:inherit}
+.login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.login-screen h1{font-size:24px;font-weight:600;margin-bottom:6px;text-align:center}
+.login-screen p{font-size:15px;color:var(--text2);margin-bottom:2rem;text-align:center}
+.profiles-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;width:100%;max-width:440px}
+.profile-btn{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .15s}
+.profile-btn:hover{border-color:var(--accent);background:var(--accent-bg)}
+.profile-btn:active{transform:scale(.97)}
+.profile-name{font-size:14px;font-weight:500}
+.profile-pts{font-size:12px;color:var(--text2)}
+.app{max-width:480px;margin:0 auto;padding:0 0 90px}
+.topbar{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:50}
+.topbar-name{font-size:15px;font-weight:500;flex:1}
+.topbar-pts{font-size:13px;font-weight:500;color:var(--accent)}
+.back-btn{background:none;border:none;font-size:13px;color:var(--text2);padding:4px 0}
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:57px;z-index:40;overflow-x:auto}
+.tab-btn{flex:1;min-width:70px;padding:12px 4px;border:none;background:none;font-size:13px;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.content{padding:16px}
+.sec-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px}
+.sec-label:first-child{margin-top:0}
+.task-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px}
+.task-card.done-me{border-color:var(--success);background:var(--success-bg)}
+.task-card.blocked{opacity:.42;pointer-events:none}
+.task-top{display:flex;align-items:flex-start;gap:10px}
+.task-name{font-size:15px;line-height:1.4;flex:1}
+.task-card.done-me .task-name{color:var(--success-text)}
+.pts-chip{font-size:12px;font-weight:600;background:var(--accent-bg);color:var(--accent-text);border-radius:20px;padding:3px 9px;white-space:nowrap;flex-shrink:0}
+.shared-chip{font-size:11px;background:var(--purple-bg);color:var(--purple);border-radius:20px;padding:2px 8px;font-weight:500;margin-top:4px;display:inline-block}
+.done-label{font-size:12px;color:var(--success-text);margin-top:5px}
+.other-label{font-size:12px;color:var(--text3);margin-top:5px}
+.upload-zone{margin-top:10px;border:2px dashed var(--border2);border-radius:var(--radius);padding:14px;text-align:center;cursor:pointer;position:relative}
+.upload-zone.has-photo{border-style:solid;border-color:var(--success)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone-label{font-size:13px;color:var(--text2);display:flex;align-items:center;justify-content:center;gap:6px;pointer-events:none}
+.photo-thumb{width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block}
+.confirm-btn{width:100%;margin-top:10px;padding:11px;border-radius:var(--radius);border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:500;transition:opacity .15s}
+.confirm-btn:disabled{opacity:.3;cursor:not-allowed}
+.who-done-list{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
+.who-pill{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--success-bg);color:var(--success-text);border:1px solid #bbf7d0}
+.who-pill.pend{background:var(--warning-bg);color:var(--warning-text);border-color:#fde68a}
+.pts-hero{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px}
+.pts-hero-num{font-size:48px;font-weight:700;color:var(--accent);line-height:1}
+.pts-hero-label{font-size:14px;color:var(--text2);margin-top:4px}
+.reward-banner{border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
+.reward-banner.none{background:#f1f0ec;border:1px solid var(--border2)}
+.reward-banner.good{background:var(--warning-bg);border:1px solid #fde68a}
+.reward-banner.great{background:var(--success-bg);border:1px solid #bbf7d0}
+.reward-icon{font-size:28px}
+.reward-text h3{font-size:15px;font-weight:600}
+.reward-text p{font-size:13px;margin-top:2px;color:var(--text2)}
+.progress-track{background:var(--surface2);border-radius:20px;height:8px;margin:10px 0 4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:20px;background:var(--accent);transition:width .4s}
+.progress-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:16px}
+.ranking-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.ranking-card.is-me{border-color:var(--accent);background:var(--accent-bg)}
+.rank-pos{font-size:20px;width:32px;text-align:center;flex-shrink:0}
+.rank-name{font-size:15px;font-weight:500;flex:1}
+.rank-pts{font-size:16px;font-weight:600;color:var(--accent)}
+.info-block{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;font-size:13px;line-height:1.9;color:var(--text2)}
+.info-block strong{color:var(--text)}
+.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center}
+.hist-thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;cursor:pointer}
+.hist-no-photo{width:44px;height:44px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:20px;flex-shrink:0}
+.hist-info{flex:1}
+.hist-name{font-size:14px;font-weight:500}
+.hist-date{font-size:12px;color:var(--text3);margin-top:2px}
+.hist-pts{font-size:14px;font-weight:600;color:var(--success-text)}
+.hist-pts.pend{color:var(--warning-text)}
+.add-form{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+.add-form label{font-size:13px;color:var(--text2);display:block;margin-bottom:4px;margin-top:10px}
+.add-form label:first-child{margin-top:0}
+.add-form input,.add-form select{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:inherit;background:#fff;color:var(--text)}
+.add-form-row{display:flex;gap:8px;align-items:stretch}
+.add-form-row select{flex-shrink:0}
+.add-form-row button{padding:9px 16px;border-radius:var(--radius);border:1px solid var(--border2);background:#fff;font-size:14px;white-space:nowrap}
+.task-manage-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:6px}
+.task-manage-top{display:flex;align-items:center;gap:6px}
+.task-manage-name{flex:1;font-size:14px}
+.task-manage-meta{font-size:12px;color:var(--text3);margin-top:2px}
+.edit-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.edit-row input{flex:1;min-width:150px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;background:#fff}
+.edit-row select{padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;background:#fff}
+.edit-row .save-edit-btn{padding:7px 14px;border-radius:var(--radius);border:none;background:var(--accent);color:#fff;font-size:13px;white-space:nowrap}
+.icon-btn{background:none;border:none;font-size:17px;padding:3px 5px;color:var(--text2);line-height:1}
+.del-btn{background:none;border:none;font-size:17px;padding:3px 5px;color:var(--danger-text);line-height:1}
+.danger-btn{width:100%;padding:12px;border-radius:var(--radius);border:1px solid #fca5a5;background:var(--danger-bg);color:var(--danger-text);font-size:14px;margin-top:8px}
+.save-btn{width:100%;padding:11px;border-radius:var(--radius);border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:500;margin-top:8px}
+.review-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px}
+.review-photo{width:100%;max-height:200px;object-fit:cover;cursor:pointer;display:block}
+.review-body{padding:12px}
+.review-who{font-size:13px;font-weight:500;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.review-task{font-size:13px;color:var(--text2);margin-bottom:10px}
+.pts-picker{display:flex;gap:6px;flex-wrap:wrap}
+.pts-option{padding:7px 13px;border-radius:20px;border:1px solid var(--border2);background:#fff;font-size:13px;font-weight:500;color:var(--text2)}
+.pts-option.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+.review-save-btn{width:100%;margin-top:10px;padding:10px;border-radius:var(--radius);border:none;background:var(--success);color:#fff;font-size:14px;font-weight:500}
+.review-save-btn:disabled{opacity:.35;cursor:not-allowed}
+.pin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px}
+.pin-box{background:var(--surface);border-radius:20px;padding:28px 24px;width:100%;max-width:300px;text-align:center}
+.pin-box h3{font-size:18px;font-weight:600;margin-bottom:6px}
+.pin-box p{font-size:14px;color:var(--text2);margin-bottom:20px}
+.pin-input{width:100%;padding:12px;font-size:22px;text-align:center;border:1px solid var(--border2);border-radius:var(--radius);letter-spacing:8px;font-family:inherit;margin-bottom:12px}
+.pin-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:500;margin-bottom:8px}
+.pin-cancel{background:none;border:none;font-size:14px;color:var(--text2)}
+.pin-error{color:var(--danger-text);font-size:13px;margin-bottom:10px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal{background:#fff;border-radius:20px;width:100%;max-width:360px;overflow:hidden}
+.modal img{width:100%;max-height:320px;object-fit:contain;background:#000;display:block}
+.modal-close{width:100%;padding:14px;border:none;background:#fff;font-size:15px;color:var(--text2);border-top:1px solid var(--border)}
+.setup-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.setup-screen h1{font-size:22px;font-weight:600;margin-bottom:6px;text-align:center}
+.setup-screen p{font-size:14px;color:var(--text2);margin-bottom:1.5rem;text-align:center}
+.setup-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:380px}
+.setup-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.setup-input{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:15px;font-family:inherit}
+.setup-btn{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:500;margin-top:4px}
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+.empty p{font-size:14px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="modal-root"></div>
+<script>
+const COLORS=['#7c3aed','#0891b2','#d97706','#be185d','#16a34a'];
+const MAMA_ID='mama';
+const MAMA_COLOR='#be185d';
+const GESTIO_PIN='0723';
+const PTS_OPTIONS=[1,2,3,5,8,10];
+const SECTIONS=['🔥 Avui — Urgent','🏠 Habitacions','📅 Setmanal'];
+// Reward thresholds
+const REWARD_NONE=20;   // below this → 0€
+const REWARD_LOW=50;    // 20-49 → 5€, 50+ → 10€
+
+const DEFAULT_TASKS=[
+  {id:'t1',name:'Separar roba per tirar',pts:5,section:'🔥 Avui — Urgent',type:'solo'},
+  {id:'t2',name:'Posar una rentadora',pts:5,section:'🔥 Avui — Urgent',type:'solo'},
+  {id:'t3',name:'Doblar i guardar roba neta',pts:5,section:'🔥 Avui — Urgent',type:'solo'},
+  {id:'t4',name:'Apartar roba de la neboda en bossa',pts:3,section:'🔥 Avui — Urgent',type:'solo'},
+  {id:'t5',name:'Recollir roba del terra habitacions',pts:5,section:'🔥 Avui — Urgent',type:'shared'},
+  {id:'t6',name:'Revisar armari i treure el que no cal',pts:5,section:'🔥 Avui — Urgent',type:'shared'},
+  {id:'t7',name:'Ordenar i recollir menjador',pts:5,section:'🏠 Habitacions',type:'solo'},
+  {id:'t8',name:'Escombrar i fregar menjador',pts:5,section:'🏠 Habitacions',type:'solo'},
+  {id:'t9',name:'Ordenar habitació pròpia',pts:5,section:'🏠 Habitacions',type:'shared'},
+  {id:'t10',name:'Aspirar habitació pròpia',pts:5,section:'🏠 Habitacions',type:'shared'},
+  {id:'t11',name:'Netejar bany complet',pts:8,section:'🏠 Habitacions',type:'solo'},
+  {id:'t12',name:'Netejar cuina (fogons, encimera)',pts:8,section:'🏠 Habitacions',type:'solo'},
+  {id:'t13',name:'Buidar totes les escombraries',pts:3,section:'📅 Setmanal',type:'solo'},
+  {id:'t14',name:'Aspirar tota la casa',pts:10,section:'📅 Setmanal',type:'shared'},
+  {id:'t15',name:'Fregar tots els terres',pts:10,section:'📅 Setmanal',type:'shared'},
+  {id:'t16',name:'Netejar lavabo i dutxa',pts:8,section:'📅 Setmanal',type:'solo'},
+  {id:'t17',name:'Posar i plegar dues rentadores',pts:6,section:'📅 Setmanal',type:'solo'},
+  {id:'t18',name:'Cuina endreçada cada nit',pts:3,section:'📅 Setmanal',type:'shared'},
+];
+
+let S={
+  setupDone:false,
+  profiles:[
+    {id:'p1',name:'',color:COLORS[0]},
+    {id:'p2',name:'',color:COLORS[1]},
+    {id:'p3',name:'',color:COLORS[2]},
+  ],
+  tasks:JSON.parse(JSON.stringify(DEFAULT_TASKS)),
+  customTasks:[],
+  completions:[],
+  photos:{},
+  pendingPhotos:{},
+  currentUser:null,
+  tab:'tasques',
+  mamaTab:'resum',
+  editingTask:null,
+  gestioUnlocked:false,
+  pinError:false,
+};
+
+function save(){
+  try{
+    const slim={...S,photos:{},pendingPhotos:{},gestioUnlocked:false,pinError:false};
+    localStorage.setItem('casa5',JSON.stringify(slim));
+    localStorage.setItem('casa5_ph',JSON.stringify(S.photos));
+  }catch(e){}
+}
+function load(){
+  try{
+    const r=localStorage.getItem('casa5');
+    if(r){const p=JSON.parse(r);S={...S,...p};}
+    const ph=localStorage.getItem('casa5_ph');
+    if(ph)S.photos=JSON.parse(ph);
+    if(!S.customTasks)S.customTasks=[];
+    if(!S.pendingPhotos)S.pendingPhotos={};
+    if(!S.editingTask)S.editingTask=null;
+    S.gestioUnlocked=false;S.pinError=false;
+  }catch(e){}
+}
+
+function weekKey(){
+  const d=new Date(),day=d.getDay();
+  const mon=new Date(d);mon.setDate(d.getDate()-day+(day===0?-6:1));
+  return mon.toISOString().slice(0,10);
+}
+function allTasks(){return[...S.tasks,...S.customTasks];}
+function profileById(id){
+  if(id===MAMA_ID)return{id:MAMA_ID,name:'Mamà',color:MAMA_COLOR};
+  return S.profiles.find(p=>p.id===id);
+}
+function allProfiles(){return[...S.profiles,{id:MAMA_ID,name:'Mamà',color:MAMA_COLOR}];}
+function initials(n){return(n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+function av(color,name,size=36){
+  return`<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*.38)}px;font-weight:600;color:#fff;flex-shrink:0">${initials(name)}</div>`;
+}
+
+function rewardForPts(pts){
+  if(pts>=REWARD_LOW) return{emoji:'🏆',euros:'10€',cls:'great',msg:'Màxima recompensa!'};
+  if(pts>=REWARD_NONE) return{emoji:'⭐',euros:'5€',cls:'good',msg:`Amb ${REWARD_LOW} pts o més → 10€`};
+  return{emoji:'❌',euros:'0€',cls:'none',msg:`Necessites ${REWARD_NONE} pts mínim per guanyar recompensa`};
+}
+function rankEmoji(i){return['🥇','🥈','🥉'][i]||`${i+1}.`;}
+function fmtDate(){return new Date().toLocaleDateString('ca',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
+
+function ptsThisWeek(profileId){
+  return S.completions
+    .filter(c=>c.week===weekKey()&&c.profileId===profileId&&c.ptsAssigned!=null)
+    .reduce((a,c)=>a+(c.ptsAssigned??0),0);
+}
+function soloTaskDoneBy(taskId){
+  const c=S.completions.find(c=>c.taskId===taskId&&c.week===weekKey()&&c.type==='solo');
+  return c?c.profileId:null;
+}
+function sharedCompletionFor(taskId,profileId){
+  return S.completions.find(c=>c.taskId===taskId&&c.profileId===profileId&&c.week===weekKey()&&c.type==='shared');
+}
+function sharedCompletionsFor(taskId){
+  return S.completions.filter(c=>c.taskId===taskId&&c.week===weekKey()&&c.type==='shared');
+}
+function pendingReviews(){
+  return S.completions.filter(c=>c.week===weekKey()&&c.type==='shared'&&c.ptsAssigned==null);
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render(){document.getElementById('root').innerHTML=buildRoot();}
+function buildRoot(){
+  if(!S.setupDone)return buildSetup();
+  if(!S.currentUser)return buildLogin();
+  if(S.currentUser===MAMA_ID)return buildMama();
+  return buildUserApp();
+}
+
+// ── SETUP ─────────────────────────────────────────────────────────────────────
+function buildSetup(){
+  return`<div class="setup-screen">
+    <h1>👋 Configura l'app</h1>
+    <p>Posa el nom de cadascú</p>
+    <div class="setup-card">
+      ${S.profiles.map((p,i)=>`<div class="setup-row">
+        ${av(p.color,p.name||`Fill ${i+1}`,40)}
+        <input class="setup-input" id="sn_${p.id}" type="text" value="${p.name}" placeholder="Nom fill ${i+1}"/>
+      </div>`).join('')}
+      <button class="setup-btn" onclick="saveSetup()">Endavant →</button>
+    </div>
+  </div>`;
+}
+function saveSetup(){
+  S.profiles.forEach(p=>{const el=document.getElementById('sn_'+p.id);if(el&&el.value.trim())p.name=el.value.trim();});
+  S.setupDone=true;save();render();
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function buildLogin(){
+  const pending=pendingReviews().length;
+  return`<div class="login-screen">
+    <h1>🏠 Casa</h1>
+    <p>Qui ets?</p>
+    <div class="profiles-grid">
+      ${S.profiles.map(p=>`<button class="profile-btn" onclick="login('${p.id}')">
+        ${av(p.color,p.name,52)}
+        <div class="profile-name">${p.name}</div>
+        <div class="profile-pts">${ptsThisWeek(p.id)} pts</div>
+      </button>`).join('')}
+      <button class="profile-btn" onclick="login('${MAMA_ID}')">
+        ${av(MAMA_COLOR,'Mamà',52)}
+        <div class="profile-name">Mamà</div>
+        <div class="profile-pts">${ptsThisWeek(MAMA_ID)} pts${pending>0?` · <span style="color:var(--warning-text)">${pending}⚠️</span>`:''}</div>
+      </button>
+    </div>
+  </div>`;
+}
+function login(id){S.currentUser=id;S.tab='tasques';S.pendingPhotos={};S.gestioUnlocked=false;render();}
+function logout(){S.currentUser=null;S.pendingPhotos={};S.gestioUnlocked=false;render();}
+function setTab(t){S.tab=t;render();}
+function setMamaTab(t){
+  if(t==='gestio'&&!S.gestioUnlocked){showPinModal();return;}
+  S.mamaTab=t;render();
+}
+
+// ── PIN ───────────────────────────────────────────────────────────────────────
+function showPinModal(){
+  document.getElementById('modal-root').innerHTML=`<div class="pin-overlay">
+    <div class="pin-box">
+      <h3>🔒 Gestió</h3>
+      <p>Introdueix la contrasenya</p>
+      ${S.pinError?`<div class="pin-error">Contrasenya incorrecta</div>`:''}
+      <input class="pin-input" id="pin-input" type="password" maxlength="6" inputmode="numeric"
+        onkeydown="if(event.key==='Enter')checkPin()"/>
+      <button class="pin-btn" onclick="checkPin()">Entrar</button>
+      <button class="pin-cancel" onclick="closeModal()">Cancel·lar</button>
+    </div>
+  </div>`;
+  setTimeout(()=>{const el=document.getElementById('pin-input');if(el)el.focus();},50);
+}
+function checkPin(){
+  const el=document.getElementById('pin-input');if(!el)return;
+  if(el.value===GESTIO_PIN){
+    S.gestioUnlocked=true;S.pinError=false;closeModal();S.mamaTab='gestio';render();
+  }else{
+    S.pinError=true;render();showPinModal();
+  }
+}
+
+// ── USER APP ──────────────────────────────────────────────────────────────────
+function buildUserApp(){
+  const p=profileById(S.currentUser);
+  const pts=ptsThisWeek(S.currentUser);
+  return`<div class="app">
+    <div class="topbar">
+      ${av(p.color,p.name,34)}
+      <span class="topbar-name">${p.name}</span>
+      <span class="topbar-pts">${pts} pts</span>
+      <button class="back-btn" onclick="logout()">Canviar ↩</button>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn ${S.tab==='tasques'?'active':''}" onclick="setTab('tasques')">Tasques</button>
+      <button class="tab-btn ${S.tab==='punts'?'active':''}" onclick="setTab('punts')">Punts</button>
+      <button class="tab-btn ${S.tab==='historial'?'active':''}" onclick="setTab('historial')">Historial</button>
+    </div>
+    <div class="content">
+      ${S.tab==='tasques'?buildTasques():S.tab==='punts'?buildPunts():buildHistorial()}
+    </div>
+  </div>`;
+}
+
+function buildTasques(){
+  const tasks=allTasks();
+  const sections={};
+  SECTIONS.forEach(s=>{sections[s]=[];});
+  tasks.forEach(t=>{
+    if(!sections[t.section])sections[t.section]=[];
+    sections[t.section].push(t);
+  });
+  let html='';
+  Object.entries(sections).forEach(([sec,list])=>{
+    if(!list.length)return;
+    html+=`<div class="sec-label">${sec}</div>`;
+    list.forEach(t=>{html+=t.type==='shared'?buildSharedCard(t):buildSoloCard(t);});
+  });
+  return html||'<div class="empty"><div class="empty-icon">🎉</div><p>Totes les tasques fetes!</p></div>';
+}
+
+function buildSoloCard(t){
+  const donBy=soloTaskDoneBy(t.id);
+  const doneByMe=donBy===S.currentUser;
+  const doneByOther=donBy&&donBy!==S.currentUser;
+  const otherP=doneByOther?profileById(donBy):null;
+  const pending=S.pendingPhotos[t.id];
+  if(doneByMe){
+    const comp=S.completions.find(c=>c.taskId===t.id&&c.week===weekKey());
+    const hasPh=comp&&comp.photoKey&&S.photos[comp.photoKey];
+    return`<div class="task-card done-me">
+      <div class="task-top"><div class="task-name">✅ ${t.name}</div><span class="pts-chip">+${t.pts} pts</span></div>
+      <div class="done-label">Feta per tu${hasPh?` · <span style="text-decoration:underline;cursor:pointer" onclick="showPhoto('${comp.photoKey}')">veure foto</span>`:''}</div>
+    </div>`;
+  }
+  if(doneByOther){
+    return`<div class="task-card blocked">
+      <div class="task-top"><div class="task-name">${t.name}</div><span class="pts-chip">${t.pts} pts</span></div>
+      <div class="other-label">Ja feta per ${otherP?otherP.name:'—'}</div>
+    </div>`;
+  }
+  return`<div class="task-card">
+    <div class="task-top"><div class="task-name">${t.name}</div><span class="pts-chip">+${t.pts} pts</span></div>
+    <div class="upload-zone ${pending?'has-photo':''}">
+      ${pending?`<img src="${pending}" class="photo-thumb" alt="foto"/>`:'' }
+      <label class="upload-zone-label">📷 ${pending?'Canviar foto':'Fes una foto de la tasca'}</label>
+      <input type="file" accept="image/*" capture="environment" onchange="handlePhoto('${t.id}',this)"/>
+    </div>
+    <button class="confirm-btn" ${pending?'':'disabled'} onclick="completeTask('${t.id}','solo')">
+      Marcar com a feta · +${t.pts} pts
+    </button>
+  </div>`;
+}
+
+function buildSharedCard(t){
+  const myComp=sharedCompletionFor(t.id,S.currentUser);
+  const allComps=sharedCompletionsFor(t.id);
+  const pending=S.pendingPhotos[t.id];
+  const whoList=allComps.map(c=>{
+    const p=profileById(c.profileId);
+    const isPend=c.ptsAssigned==null;
+    return`<span class="who-pill ${isPend?'pend':''}">${p?p.name:'?'}${isPend?' · pendent':` · ${c.ptsAssigned} pts`}</span>`;
+  }).join('');
+  if(myComp){
+    const hasPh=myComp.photoKey&&S.photos[myComp.photoKey];
+    const ptsLabel=myComp.ptsAssigned!=null?`+${myComp.ptsAssigned} pts`:'pendent de revisar';
+    return`<div class="task-card done-me">
+      <div class="task-top">
+        <div><div class="task-name">✅ ${t.name}</div><span class="shared-chip">👥 compartida</span></div>
+        <span class="pts-chip">${ptsLabel}</span>
+      </div>
+      ${hasPh?`<div class="done-label" style="margin-top:8px"><span style="text-decoration:underline;cursor:pointer" onclick="showPhoto('${myComp.photoKey}')">veure la teva foto</span></div>`:''}
+      ${whoList?`<div class="who-done-list">${whoList}</div>`:''}
+    </div>`;
+  }
+  return`<div class="task-card">
+    <div class="task-top">
+      <div><div class="task-name">${t.name}</div><span class="shared-chip">👥 compartida</span></div>
+      <span class="pts-chip">fins ${t.pts} pts</span>
+    </div>
+    ${whoList?`<div class="who-done-list" style="margin-top:8px">${whoList}</div>`:''}
+    <div class="upload-zone ${pending?'has-photo':''}" style="margin-top:10px">
+      ${pending?`<img src="${pending}" class="photo-thumb" alt="foto"/>`:'' }
+      <label class="upload-zone-label">📷 ${pending?'Canviar foto':'Fes una foto de la teva part'}</label>
+      <input type="file" accept="image/*" capture="environment" onchange="handlePhoto('${t.id}',this)"/>
+    </div>
+    <button class="confirm-btn" ${pending?'':'disabled'} onclick="completeTask('${t.id}','shared')">
+      Enviar foto per revisar
+    </button>
+  </div>`;
+}
+
+function buildPunts(){
+  const myPts=ptsThisWeek(S.currentUser);
+  const reward=rewardForPts(myPts);
+  const pctTo50=Math.min(100,Math.round(myPts/REWARD_LOW*100));
+  const pctTo20=Math.min(100,Math.round(myPts/REWARD_NONE*100));
+  const ranking=[...allProfiles()].sort((a,b)=>ptsThisWeek(b.id)-ptsThisWeek(a.id));
+  return`
+    <div class="pts-hero">
+      <div class="pts-hero-num">${myPts}</div>
+      <div class="pts-hero-label">punts aquesta setmana</div>
+    </div>
+    <div class="reward-banner ${reward.cls}">
+      <div class="reward-icon">${reward.emoji}</div>
+      <div class="reward-text"><h3>${reward.euros} al cap de setmana</h3><p>${reward.msg}</p></div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" style="width:${pctTo50}%"></div></div>
+    <div class="progress-labels">
+      <span>0 pts</span>
+      <span style="color:${myPts>=REWARD_NONE?'var(--warning-text)':'inherit'}">${REWARD_NONE} pts → 5€</span>
+      <span style="color:${myPts>=REWARD_LOW?'var(--success-text)':'inherit'}">${REWARD_LOW} pts → 10€</span>
+    </div>
+    <div class="sec-label">Classificació</div>
+    ${ranking.map((p,i)=>{
+      const pts=ptsThisWeek(p.id),isMe=p.id===S.currentUser;
+      const r=rewardForPts(pts);
+      return`<div class="ranking-card ${isMe?'is-me':''}">
+        <div class="rank-pos">${rankEmoji(i)}</div>
+        ${av(p.color,p.name,36)}
+        <div class="rank-name">${p.name}${isMe?' (tu)':''}</div>
+        <div style="text-align:right">
+          <div class="rank-pts">${pts} pts</div>
+          <div style="font-size:12px;color:var(--text2)">${p.id===MAMA_ID?'—':r.euros}</div>
+        </div>
+      </div>`;
+    }).join('')}
+    <div class="sec-label" style="margin-top:16px">Com funciona</div>
+    <div class="info-block">
+      <strong>📸 Cal foto</strong> per validar cada tasca.<br>
+      <strong>👤 Individual</strong> — el primer que la fa se l'endú.<br>
+      <strong>👥 Compartida</strong> — tothom puja la seva foto, la mamà assigna els punts.<br>
+      <strong>❌ menys de ${REWARD_NONE} pts → 0€</strong><br>
+      <strong>⭐ ${REWARD_NONE}–${REWARD_LOW-1} pts → 5€</strong><br>
+      <strong>🏆 ${REWARD_LOW}+ pts → 10€</strong> al cap de setmana.
+    </div>`;
+}
+
+function buildHistorial(){
+  const mine=S.completions.filter(c=>c.profileId===S.currentUser);
+  if(!mine.length)return`<div class="empty"><div class="empty-icon">📋</div><p>Encara no has completat cap tasca</p></div>`;
+  const byWeek={};
+  mine.forEach(c=>{if(!byWeek[c.week])byWeek[c.week]=[];byWeek[c.week].push(c);});
+  let html='';
+  Object.entries(byWeek).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([week,entries])=>{
+    const total=entries.reduce((a,c)=>a+(c.ptsAssigned??0),0);
+    const r=rewardForPts(total);
+    html+=`<div class="sec-label">${week} — ${total} pts → ${r.euros}</div>`;
+    entries.forEach(c=>{
+      const hasPh=c.photoKey&&S.photos[c.photoKey];
+      const isPend=c.type==='shared'&&c.ptsAssigned==null;
+      html+=`<div class="hist-item">
+        ${hasPh?`<img src="${S.photos[c.photoKey]}" class="hist-thumb" onclick="showPhoto('${c.photoKey}')" alt="foto"/>`:`<div class="hist-no-photo">📷</div>`}
+        <div class="hist-info"><div class="hist-name">${c.taskName}</div><div class="hist-date">${c.date}</div></div>
+        <div class="hist-pts ${isPend?'pend':''}">${isPend?'pendent':`+${c.ptsAssigned??c.pts} pts`}</div>
+      </div>`;
+    });
+  });
+  return html;
+}
+
+// ── MAMA ──────────────────────────────────────────────────────────────────────
+function buildMama(){
+  const pending=pendingReviews().length;
+  return`<div class="app">
+    <div class="topbar">
+      ${av(MAMA_COLOR,'Mamà',34)}
+      <span class="topbar-name">Mamà</span>
+      <span class="topbar-pts">${ptsThisWeek(MAMA_ID)} pts</span>
+      <button class="back-btn" onclick="logout()">Canviar ↩</button>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn ${S.mamaTab==='resum'?'active':''}" onclick="setMamaTab('resum')">Resum</button>
+      <button class="tab-btn ${S.mamaTab==='revisar'?'active':''}" onclick="setMamaTab('revisar')">Revisar${pending?` (${pending})`:''}</button>
+      <button class="tab-btn ${S.mamaTab==='tasques'?'active':''}" onclick="setMamaTab('tasques')">Tasques</button>
+      <button class="tab-btn ${S.mamaTab==='gestio'?'active':''}" onclick="setMamaTab('gestio')">Gestió 🔒</button>
+    </div>
+    <div class="content">
+      ${S.mamaTab==='resum'?buildMamaResum():S.mamaTab==='revisar'?buildMamaRevisar():S.mamaTab==='tasques'?buildTasques():buildMamaGestio()}
+    </div>
+  </div>`;
+}
+
+function buildMamaResum(){
+  const weekComps=S.completions.filter(c=>c.week===weekKey());
+  const ranking=[...allProfiles()].sort((a,b)=>ptsThisWeek(b.id)-ptsThisWeek(a.id));
+  return`
+    <div class="sec-label">Classificació setmanal</div>
+    ${ranking.map((p,i)=>{
+      const pts=ptsThisWeek(p.id),r=rewardForPts(pts);
+      return`<div class="ranking-card">
+        <div class="rank-pos">${rankEmoji(i)}</div>
+        ${av(p.color,p.name,36)}
+        <div class="rank-name">${p.name}</div>
+        <div style="text-align:right">
+          <div class="rank-pts">${pts} pts</div>
+          <div style="font-size:12px;color:var(--text2)">${p.id===MAMA_ID?'—':r.euros}</div>
+        </div>
+      </div>`;
+    }).join('')}
+    <div class="sec-label" style="margin-top:16px">Tasques completades (${weekKey()})</div>
+    ${!weekComps.length?`<div class="empty"><div class="empty-icon">📋</div><p>Cap tasca feta encara</p></div>`:
+      weekComps.map(c=>{
+        const p=profileById(c.profileId),hasPh=c.photoKey&&S.photos[c.photoKey];
+        const isPend=c.type==='shared'&&c.ptsAssigned==null;
+        return`<div class="hist-item">
+          ${hasPh?`<img src="${S.photos[c.photoKey]}" class="hist-thumb" onclick="showPhoto('${c.photoKey}')" alt="foto"/>`:`<div class="hist-no-photo">📷</div>`}
+          <div class="hist-info"><div class="hist-name">${c.taskName}</div><div class="hist-date">${p?p.name:'—'} · ${c.date}</div></div>
+          <div class="hist-pts ${isPend?'pend':''}">${isPend?'pendent':`+${c.ptsAssigned??c.pts} pts`}</div>
+        </div>`;
+      }).join('')}`;
+}
+
+function buildMamaRevisar(){
+  const pending=pendingReviews();
+  if(!pending.length)return`<div class="empty"><div class="empty-icon">✅</div><p>No hi ha fotos pendents de revisar</p></div>`;
+  return pending.map(c=>{
+    const p=profileById(c.profileId),hasPh=c.photoKey&&S.photos[c.photoKey];
+    return`<div class="review-card">
+      ${hasPh?`<img src="${S.photos[c.photoKey]}" class="review-photo" onclick="showPhoto('${c.photoKey}')" alt="foto"/>`
+        :`<div style="background:#111;height:90px;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px">Sense foto</div>`}
+      <div class="review-body">
+        <div class="review-who">${av(p?p.color:'#888',p?p.name:'?',28)}<span>${p?p.name:'—'}</span></div>
+        <div class="review-task" style="margin-top:4px">📋 ${c.taskName}</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px">Quants punts li dones?</div>
+        <div class="pts-picker">
+          ${PTS_OPTIONS.map(pts=>`<button class="pts-option ${c._tmpPts===pts?'sel':''}" onclick="selectPts('${c.id}',${pts})">${pts}</button>`).join('')}
+        </div>
+        <button class="review-save-btn" onclick="assignPts('${c.id}')" ${c._tmpPts!=null?'':'disabled'}>
+          Confirmar ${c._tmpPts!=null?c._tmpPts+' pts':'—'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildMamaGestio(){
+  const tasks=allTasks();
+  const sections={};
+  SECTIONS.forEach(s=>{sections[s]=[];});
+  tasks.forEach(t=>{
+    if(!sections[t.section])sections[t.section]=[];
+    sections[t.section].push(t);
+  });
+  // extra sections (custom with diff section name)
+  tasks.filter(t=>!SECTIONS.includes(t.section)).forEach(t=>{
+    if(!sections[t.section])sections[t.section]=[];
+    if(!sections[t.section].includes(t))sections[t.section].push(t);
+  });
+
+  let tasksHtml='';
+  Object.entries(sections).forEach(([sec,list])=>{
+    if(!list.length)return;
+    tasksHtml+=`<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px">${sec}</div>`;
+    list.forEach(t=>{
+      const isEd=S.editingTask===t.id;
+      const typeLabel=t.type==='shared'?'👥 compartida':'👤 individual';
+      tasksHtml+=`<div class="task-manage-item">
+        <div class="task-manage-top">
+          <div style="flex:1">
+            <div class="task-manage-name">${t.name}</div>
+            <div class="task-manage-meta">${typeLabel} · ${t.pts} pts</div>
+          </div>
+          <button class="icon-btn" onclick="toggleEdit('${t.id}')" title="Editar">${isEd?'✕':'✏️'}</button>
+          <button class="del-btn" onclick="deleteTask('${t.id}')" title="Eliminar">🗑️</button>
+        </div>
+        ${isEd?`<div class="edit-row">
+          <input id="en_${t.id}" type="text" value="${t.name.replace(/"/g,'&quot;')}"/>
+          <select id="ep_${t.id}">${[3,5,8,10].map(p=>`<option value="${p}" ${t.pts===p?'selected':''}>${p} pts</option>`).join('')}</select>
+          <select id="et_${t.id}">
+            <option value="solo" ${t.type==='solo'?'selected':''}>👤 individual</option>
+            <option value="shared" ${t.type==='shared'?'selected':''}>👥 compartida</option>
+          </select>
+          <select id="es_${t.id}">${SECTIONS.map(s=>`<option value="${s}" ${t.section===s?'selected':''}>${s}</option>`).join('')}</select>
+          <button class="save-edit-btn" onclick="saveEdit('${t.id}')">Desar</button>
+        </div>`:''}
+      </div>`;
+    });
+  });
+
+  return`
+    <div class="sec-label">Afegir tasca nova</div>
+    <div class="add-form">
+      <label>Nom</label>
+      <input id="new-name" type="text" placeholder="Nom de la tasca..."/>
+      <label>Bloc</label>
+      <select id="new-sec">${SECTIONS.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+      <label>Tipus</label>
+      <select id="new-type">
+        <option value="solo">👤 Individual — el primer que la fa se l'endú</option>
+        <option value="shared">👥 Compartida — cadascú puja la seva foto</option>
+      </select>
+      <label>Punts</label>
+      <div class="add-form-row">
+        <select id="new-pts" style="flex:1">${[3,5,8,10].map(p=>`<option value="${p}" ${p===5?'selected':''}>${p} pts</option>`).join('')}</select>
+        <button onclick="addTask()" style="padding:9px 16px;border-radius:var(--radius);border:1px solid var(--border2);background:#fff;font-size:14px">Afegir</button>
+      </div>
+    </div>
+
+    <div class="sec-label" style="margin-top:4px">Noms dels fills</div>
+    <div class="add-form">
+      ${S.profiles.map(p=>`<div class="setup-row" style="margin-bottom:10px">
+        ${av(p.color,p.name,34)}
+        <input id="ren_${p.id}" type="text" value="${p.name}" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:inherit"/>
+      </div>`).join('')}
+      <button class="save-btn" onclick="saveNames()">Desar noms</button>
+    </div>
+
+    <div class="sec-label" style="margin-top:4px">Totes les tasques (edita o elimina)</div>
+    ${tasksHtml}
+
+    <div class="sec-label" style="margin-top:16px">Accions</div>
+    <button class="danger-btn" onclick="resetWeek()">🔄 Reiniciar setmana manualment</button>`;
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function handlePhoto(taskId,input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{S.pendingPhotos[taskId]=e.target.result;render();};
+  reader.readAsDataURL(file);
+}
+
+function completeTask(taskId,type){
+  const task=allTasks().find(t=>t.id===taskId);if(!task)return;
+  const photo=S.pendingPhotos[taskId]||null;
+  const photoKey=photo?'ph_'+Date.now():null;
+  if(photo&&photoKey)S.photos[photoKey]=photo;
+  delete S.pendingPhotos[taskId];
+  S.completions.unshift({
+    id:'c'+Date.now(),taskId,taskName:task.name,
+    profileId:S.currentUser,pts:task.pts,week:weekKey(),
+    date:fmtDate(),type,photoKey,
+    ptsAssigned:type==='solo'?task.pts:null,
+  });
+  save();render();
+}
+
+function selectPts(compId,pts){
+  const c=S.completions.find(x=>x.id===compId);
+  if(c){c._tmpPts=pts;render();}
+}
+function assignPts(compId){
+  const c=S.completions.find(x=>x.id===compId);
+  if(!c||c._tmpPts==null)return;
+  c.ptsAssigned=c._tmpPts;delete c._tmpPts;
+  save();render();
+}
+
+function toggleEdit(id){S.editingTask=S.editingTask===id?null:id;render();}
+
+function saveEdit(id){
+  // search in both arrays
+  let task=S.tasks.find(t=>t.id===id);
+  if(!task)task=S.customTasks.find(t=>t.id===id);
+  if(!task)return;
+  const n=document.getElementById('en_'+id);
+  const p=document.getElementById('ep_'+id);
+  const tp=document.getElementById('et_'+id);
+  const sec=document.getElementById('es_'+id);
+  if(n&&n.value.trim())task.name=n.value.trim();
+  if(p)task.pts=parseInt(p.value)||task.pts;
+  if(tp)task.type=tp.value;
+  if(sec)task.section=sec.value;
+  S.editingTask=null;save();render();
+}
+
+function deleteTask(id){
+  if(!confirm('Eliminar aquesta tasca?'))return;
+  // Remove from both arrays — this is the fix
+  const inDefault=S.tasks.findIndex(t=>t.id===id);
+  if(inDefault!==-1){
+    S.tasks.splice(inDefault,1);
+  } else {
+    const inCustom=S.customTasks.findIndex(t=>t.id===id);
+    if(inCustom!==-1)S.customTasks.splice(inCustom,1);
+  }
+  save();render();
+}
+
+function addTask(){
+  const n=document.getElementById('new-name');
+  const sec=document.getElementById('new-sec');
+  const tp=document.getElementById('new-type');
+  const p=document.getElementById('new-pts');
+  const name=n?n.value.trim():'';if(!name)return;
+  S.customTasks.push({id:'c'+Date.now(),name,pts:parseInt(p?p.value:5)||5,section:sec?sec.value:SECTIONS[0],type:tp?tp.value:'solo'});
+  if(n)n.value='';save();render();
+}
+
+function saveNames(){
+  S.profiles.forEach(p=>{const el=document.getElementById('ren_'+p.id);if(el&&el.value.trim())p.name=el.value.trim();});
+  save();render();
+}
+
+function resetWeek(){
+  if(!confirm('Reiniciar la setmana? Quedaran a l\'historial.'))return;
+  save();render();
+}
+
+function showPhoto(photoKey){
+  const ph=S.photos[photoKey];if(!ph)return;
+  document.getElementById('modal-root').innerHTML=`<div class="modal-overlay" onclick="closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <img src="${ph}" alt="Foto"/>
+      <button class="modal-close" onclick="closeModal()">Tancar</button>
+    </div>
+  </div>`;
+}
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+
+load();render();
+</script>
+</body>
+</html>
